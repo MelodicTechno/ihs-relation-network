@@ -11,6 +11,8 @@ import argparse
 
 if __name__ == '__main__':
 
+    print("aa")
+
     parser = argparse.ArgumentParser(description="One Shot Visual Recognition")
 
     # 如果需要，修改默认值、类型或描述
@@ -95,9 +97,6 @@ if __name__ == '__main__':
     last_accuracy = 0.0
 
     for episode in range(EPISODE):
-        # 学习率调度器更新
-        feature_encoder_scheduler.step(episode)
-        relation_network_scheduler.step(episode)
 
         # 数据加载
         degrees = random.choice([0, 90, 180, 270])
@@ -108,8 +107,12 @@ if __name__ == '__main__':
                                            rotation=degrees)
 
         # 获取支持集和查询集
-        samples, sample_labels = next(iter(sample_dataloader))
-        batches, batch_labels = next(iter(batch_dataloader))
+        try:
+            samples, sample_labels = next(iter(sample_dataloader))
+            batches, batch_labels = next(iter(batch_dataloader))
+        except StopIteration:
+            print(f"Error in DataLoader at episode {episode}. Not enough data.")
+            continue
 
         # 特征提取
         with torch.no_grad():
@@ -139,6 +142,10 @@ if __name__ == '__main__':
         # 更新权重
         feature_encoder_optim.step()
         relation_network_optim.step()
+
+        # 学习率调度器更新
+        feature_encoder_scheduler.step(episode)
+        relation_network_scheduler.step(episode)
 
         # 打印训练信息
         if (episode + 1) % 50 == 0:
